@@ -17,7 +17,7 @@ public class Migration {
 
         // 2. properties
         Path propsPath = Paths.get(baseDir, "src/main/resources/application.properties");
-        String props = "server.port=8080\nspring.data.mongodb.uri=mongodb+srv://ps:<db_password>@cluster0.si0a6ee.mongodb.net/nanasa?appName=Cluster0\njwt.secret=9a4f2c8d3b7a1e6f45c8a0b3f267d8b1d4e6f3c8a9d2b5f8e3a9c8b5f6v8a3d9\njwt.expiration=86400000\ncors.allowed-origins=http://localhost:5173,http://localhost:5174\n";
+        String props = "server.port=8080\nspring.data.mongodb.uri=mongodb+srv://chamikarapasindu367_db_user:HsQ63tIbwMpdzIFR@cluster0.pxsvw25.mongodb.net/?appName=Cluster0\nspring.data.mongodb.database=nanasa\njwt.secret=9a4f2c8d3b7a1e6f45c8a0b3f267d8b1d4e6f3c8a9d2b5f8e3a9c8b5f6v8a3d9\njwt.expiration=86400000\ncors.allowed-origins=http://localhost:5173,http://localhost:5174\n";
         Files.write(propsPath, props.getBytes());
 
         // 3. source

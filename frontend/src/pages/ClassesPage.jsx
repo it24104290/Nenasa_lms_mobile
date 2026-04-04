@@ -74,6 +74,30 @@ export default function ClassesPage() {
     setSaving(true);
     setStatus(null);
 
+    const name = String(form.name || '').trim();
+    const grade = String(form.grade || '').trim();
+    const subjectId = String(form.subjectId || '').trim();
+    const classType = String(form.type || '').trim().toUpperCase();
+    const allowedTypes = ['THEORY', 'REVISION', 'PAPER'];
+
+    if (!name || !grade || !subjectId) {
+      setSaving(false);
+      setStatus({ type: 'error', message: 'Class name, grade, and subject are required.' });
+      return;
+    }
+
+    if (!allowedTypes.includes(classType)) {
+      setSaving(false);
+      setStatus({ type: 'error', message: 'Class type must be THEORY, REVISION, or PAPER.' });
+      return;
+    }
+
+    if (!form.startTime || !form.endTime || form.endTime <= form.startTime) {
+      setSaving(false);
+      setStatus({ type: 'error', message: 'End time must be after start time.' });
+      return;
+    }
+
     const teacherIdForCreate = isTeacherUser ? inferredTeacherId : form.teacherId;
     if (isTeacherUser && !teacherIdForCreate) {
       setSaving(false);
@@ -83,10 +107,10 @@ export default function ClassesPage() {
 
     try {
       await api.post('/classes', {
-        name: form.name,
-        grade: form.grade,
-        subjectId: form.subjectId,
-        type: form.type,
+        name,
+        grade,
+        subjectId,
+        type: classType,
         dayOfWeek: form.dayOfWeek,
         startTime: form.startTime,
         endTime: form.endTime,

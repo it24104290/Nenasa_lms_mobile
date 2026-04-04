@@ -7,4 +7,5 @@ import java.util.List;
 
 public interface TuitionClassRepository extends MongoRepository<TuitionClass, String> {
     List<TuitionClass> findBySubjectIdAndTeacher_IdAndTypeIn(String subjectId, String teacherId, List<String> types);
+    List<TuitionClass> findByTeacher_IdAndTypeIn(String teacherId, List<String> types);
 }

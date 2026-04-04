@@ -1,7 +1,9 @@
 package com.nanasa.nanasa_lms.controller;
 
+import com.nanasa.nanasa_lms.dto.TuitionClassRequest;
 import com.nanasa.nanasa_lms.model.TuitionClass;
 import com.nanasa.nanasa_lms.service.TuitionClassService;
+import jakarta.validation.Valid;
 import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.*;
 
@@ -33,16 +35,16 @@ public class TuitionClassController {
     @PostMapping
     @PreAuthorize("hasAnyRole('ADMIN','TEACHER')")
     public TuitionClass create(@RequestParam(required = false) String teacherId,
-                               @RequestBody TuitionClass clazz) {
-        return classService.create(clazz, teacherId);
+                               @Valid @RequestBody TuitionClassRequest request) {
+        return classService.create(request, teacherId);
     }
 
     @PutMapping("/{id}")
     @PreAuthorize("hasAnyRole('ADMIN','TEACHER')")
     public TuitionClass update(@PathVariable String id,
                                @RequestParam(required = false) String teacherId,
-                               @RequestBody TuitionClass clazz) {
-        return classService.update(id, clazz, teacherId);
+                               @Valid @RequestBody TuitionClassRequest request) {
+        return classService.update(id, request, teacherId);
     }
 
     @DeleteMapping("/{id}")

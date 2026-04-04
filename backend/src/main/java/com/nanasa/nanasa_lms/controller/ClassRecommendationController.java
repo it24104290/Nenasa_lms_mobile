@@ -6,7 +6,7 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.*;
 
-import java.util.List;
+import java.util.Map;
 
 @RestController
 @RequestMapping("/api/recommendations")
@@ -21,7 +21,7 @@ public class ClassRecommendationController {
 
     @GetMapping
     @PreAuthorize("hasRole('STUDENT')")
-    public ResponseEntity<List<TuitionClass>> getRecommendations(
+    public ResponseEntity<Map<String, Object>> getRecommendations(
             @RequestParam String subjectId,
             @RequestParam String teacherId) {
         return ResponseEntity.ok(recommendationService.recommendClasses(subjectId, teacherId));

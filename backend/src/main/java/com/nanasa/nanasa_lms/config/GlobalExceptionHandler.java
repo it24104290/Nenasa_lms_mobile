@@ -1,6 +1,7 @@
 package com.nanasa.nanasa_lms.config;
 
 import com.mongodb.DuplicateKeyException;
+import com.mongodb.MongoSecurityException;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.dao.DataIntegrityViolationException;
@@ -8,6 +9,7 @@ import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.core.AuthenticationException;
 import org.springframework.security.access.AccessDeniedException;
+import org.springframework.data.mongodb.UncategorizedMongoDbException;
 import org.springframework.validation.FieldError;
 import org.springframework.http.converter.HttpMessageNotReadableException;
 import org.springframework.web.servlet.resource.NoResourceFoundException;
@@ -61,8 +63,26 @@ public class GlobalExceptionHandler {
     @ExceptionHandler(AuthenticationException.class)
     public ResponseEntity<Map<String, String>> handleAuthentication(AuthenticationException ex) {
         Map<String, String> body = new HashMap<>();
+
+        if (isMongoAuthFailure(ex)) {
+            body.put("message", "Database authentication failed. Verify MongoDB username/password and database permissions.");
+            return ResponseEntity.status(HttpStatus.SERVICE_UNAVAILABLE).body(body);
+        }
+
         body.put("message", "Invalid username or password");
         return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body(body);
+    }
+
+    @ExceptionHandler({MongoSecurityException.class, UncategorizedMongoDbException.class})
+    public ResponseEntity<Map<String, String>> handleMongoAuth(Exception ex) {
+        Map<String, String> body = new HashMap<>();
+        if (isMongoAuthFailure(ex)) {
+            body.put("message", "Database authentication failed. Verify MongoDB username/password and database permissions.");
+            return ResponseEntity.status(HttpStatus.SERVICE_UNAVAILABLE).body(body);
+        }
+
+        body.put("message", "Database connection failed. Please try again later.");
+        return ResponseEntity.status(HttpStatus.SERVICE_UNAVAILABLE).body(body);
     }
 
     @ExceptionHandler(AccessDeniedException.class)
@@ -86,5 +106,25 @@ public class GlobalExceptionHandler {
         String message = ex.getMessage();
         body.put("message", (message != null && !message.isBlank()) ? message : "Unexpected server error");
         return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(body);
+    }
+
+    private boolean isMongoAuthFailure(Throwable throwable) {
+        Throwable current = throwable;
+        while (current != null) {
+            if (current instanceof MongoSecurityException) {
+                return true;
+            }
+
+            String message = current.getMessage();
+            if (message != null) {
+                String normalized = message.toLowerCase();
+                if (normalized.contains("authentication failed") || normalized.contains("bad auth")) {
+                    return true;
+                }
+            }
+
+            current = current.getCause();
+        }
+        return false;
     }
 }

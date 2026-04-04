@@ -1,5 +1,6 @@
 package com.nanasa.nanasa_lms.service;
 
+import com.nanasa.nanasa_lms.dto.TuitionClassRequest;
 import com.nanasa.nanasa_lms.model.Teacher;
 import com.nanasa.nanasa_lms.model.TuitionClass;
 import com.nanasa.nanasa_lms.repository.TeacherRepository;
@@ -28,7 +29,19 @@ public class TuitionClassService {
                 .orElseThrow(() -> new IllegalArgumentException("Class not found"));
     }
 
-    public TuitionClass create(TuitionClass clazz, String teacherId) {
+    public TuitionClass create(TuitionClassRequest request, String teacherId) {
+        validateSchedule(request.getStartTime(), request.getEndTime());
+
+        TuitionClass clazz = TuitionClass.builder()
+                .name(request.getName().trim())
+                .grade(request.getGrade().trim())
+                .subjectId(request.getSubjectId().trim())
+                .type(request.getType().trim().toUpperCase())
+                .dayOfWeek(request.getDayOfWeek())
+                .startTime(request.getStartTime())
+                .endTime(request.getEndTime())
+                .build();
+
         if (teacherId != null) {
             Teacher teacher = teacherRepository.findById(teacherId)
                     .orElseThrow(() -> new IllegalArgumentException("Teacher not found"));
@@ -37,10 +50,14 @@ public class TuitionClassService {
         return classRepository.save(clazz);
     }
 
-    public TuitionClass update(String id, TuitionClass updated, String teacherId) {
+    public TuitionClass update(String id, TuitionClassRequest updated, String teacherId) {
+        validateSchedule(updated.getStartTime(), updated.getEndTime());
+
         TuitionClass existing = findById(id);
-        existing.setName(updated.getName());
-        existing.setGrade(updated.getGrade());
+        existing.setName(updated.getName().trim());
+        existing.setGrade(updated.getGrade().trim());
+        existing.setSubjectId(updated.getSubjectId().trim());
+        existing.setType(updated.getType().trim().toUpperCase());
         existing.setDayOfWeek(updated.getDayOfWeek());
         existing.setStartTime(updated.getStartTime());
         existing.setEndTime(updated.getEndTime());
@@ -54,6 +71,15 @@ public class TuitionClassService {
 
     public void delete(String id) {
         classRepository.deleteById(id);
+    }
+
+    private void validateSchedule(java.time.LocalTime startTime, java.time.LocalTime endTime) {
+        if (startTime == null || endTime == null) {
+            throw new IllegalArgumentException("Start time and end time are required");
+        }
+        if (!endTime.isAfter(startTime)) {
+            throw new IllegalArgumentException("End time must be after start time");
+        }
     }
 }
 

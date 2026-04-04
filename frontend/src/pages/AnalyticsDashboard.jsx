@@ -6,19 +6,89 @@ import { useAuth } from '../services/AuthContext';
 export default function AnalyticsDashboard() {
     const { user } = useAuth();
     const role = String(user?.role || '').toUpperCase().replace(/^ROLE_/, '');
+    const isAdmin = role === 'ADMIN';
     const username = String(user?.username || '').trim().toLowerCase();
     const [activeTab, setActiveTab] = useState('performance');
+
+    const [teachers, setTeachers] = useState([]);
+    const [selectedTeacherId, setSelectedTeacherId] = useState('');
+    const [loadingPerformance, setLoadingPerformance] = useState(false);
+    const [performanceError, setPerformanceError] = useState('');
+    const [performancePayload, setPerformancePayload] = useState({
+        teacherId: null,
+        teacherName: '',
+        summary: {
+            overallClassAverageMarks: 0,
+            overallClassAveragePercentage: 0,
+            passStudentPercentage: 0,
+            totalExams: 0,
+            totalClasses: 0,
+            totalSubmissions: 0,
+            passMarkPercentage: 40,
+        },
+        examPerformance: [],
+        classComparison: [],
+        chartData: {
+            examAverages: [],
+            classComparison: [],
+        },
+    });
+
     const [leaderboardPayload, setLeaderboardPayload] = useState({ subjects: [], date: '', lastUpdatedAt: '' });
     const [selectedSubject, setSelectedSubject] = useState('');
     const [loadingLeaderboard, setLoadingLeaderboard] = useState(false);
     const [leaderboardError, setLeaderboardError] = useState('');
 
-    // Hardcoded mockup data as specified
-    const performanceData = [
-        { name: 'Term 1', 'Physics': 65, 'Chemistry': 70, 'Math': 55 },
-        { name: 'Term 2', 'Physics': 72, 'Chemistry': 75, 'Math': 68 },
-        { name: 'Term 3', 'Physics': 85, 'Chemistry': 82, 'Math': 78 },
-    ];
+    const loadTeacherOptions = async () => {
+        if (!isAdmin) return;
+        try {
+            const res = await api.get('/teachers');
+            const list = Array.isArray(res?.data) ? res.data : [];
+            setTeachers(list);
+            if (list.length > 0 && !selectedTeacherId) {
+                setSelectedTeacherId(list[0].id || list[0]._id || '');
+            }
+        } catch {
+            setTeachers([]);
+        }
+    };
+
+    const loadPerformance = async () => {
+        if (isAdmin && !selectedTeacherId) {
+            return;
+        }
+
+        setLoadingPerformance(true);
+        setPerformanceError('');
+        try {
+            const params = { passMarkPercentage: 40 };
+            if (isAdmin) {
+                params.teacherId = selectedTeacherId;
+            }
+
+            const res = await api.get('/analytics/teacher/performance', { params });
+            const payload = res?.data || {};
+            setPerformancePayload({
+                teacherId: payload.teacherId || null,
+                teacherName: payload.teacherName || '',
+                summary: payload.summary || {},
+                examPerformance: Array.isArray(payload.examPerformance) ? payload.examPerformance : [],
+                classComparison: Array.isArray(payload.classComparison) ? payload.classComparison : [],
+                chartData: payload.chartData || { examAverages: [], classComparison: [] },
+            });
+        } catch (error) {
+            const message = error?.response?.data?.message || error?.response?.data || 'Failed to load performance analytics.';
+            setPerformanceError(String(message));
+            setPerformancePayload((prev) => ({
+                ...prev,
+                examPerformance: [],
+                classComparison: [],
+                chartData: { examAverages: [], classComparison: [] },
+            }));
+        } finally {
+            setLoadingPerformance(false);
+        }
+    };
 
     const loadDailyLeaderboard = async () => {
         setLoadingLeaderboard(true);
@@ -50,10 +120,33 @@ export default function AnalyticsDashboard() {
     };
 
     useEffect(() => {
+        loadTeacherOptions();
+    }, [isAdmin]);
+
+    useEffect(() => {
+        loadPerformance();
+    }, [isAdmin, selectedTeacherId]);
+
+    useEffect(() => {
         loadDailyLeaderboard();
         const id = setInterval(loadDailyLeaderboard, 60000);
         return () => clearInterval(id);
     }, []);
+
+    const examAverages = performancePayload?.chartData?.examAverages || [];
+    const classComparisonChart = performancePayload?.chartData?.classComparison || [];
+    const examRows = performancePayload?.examPerformance || [];
+    const classRows = performancePayload?.classComparison || [];
+
+    const summary = {
+        overallClassAverageMarks: Number(performancePayload?.summary?.overallClassAverageMarks || 0),
+        overallClassAveragePercentage: Number(performancePayload?.summary?.overallClassAveragePercentage || 0),
+        passStudentPercentage: Number(performancePayload?.summary?.passStudentPercentage || 0),
+        totalExams: Number(performancePayload?.summary?.totalExams || 0),
+        totalClasses: Number(performancePayload?.summary?.totalClasses || 0),
+        totalSubmissions: Number(performancePayload?.summary?.totalSubmissions || 0),
+        passMarkPercentage: Number(performancePayload?.summary?.passMarkPercentage || 40),
+    };
 
     const selectedLeaderboard = useMemo(() => {
         if (!Array.isArray(leaderboardPayload.subjects)) return null;
@@ -141,42 +234,160 @@ export default function AnalyticsDashboard() {
 
             {/* Dashboard View */}
             {activeTab === 'performance' && (
-                <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
-                    {/* Bar Chart Container */}
-                    <div className="bg-white rounded-3xl p-8 shadow-sm border border-slate-100">
-                        <h2 className="text-xl font-bold text-slate-800 mb-6">Average Marks by Subject</h2>
-                        <div className="h-80 w-full">
-                            <ResponsiveContainer width="100%" height="100%">
-                                <BarChart data={performanceData} margin={{ top: 20, right: 30, left: 0, bottom: 5 }}>
-                                    <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#E2E8F0" />
-                                    <XAxis dataKey="name" axisLine={false} tickLine={false} tick={{ fill: '#64748b' }} />
-                                    <YAxis axisLine={false} tickLine={false} tick={{ fill: '#64748b' }} />
-                                    <Tooltip cursor={{ fill: '#f8fafc' }} contentStyle={{ borderRadius: '12px', border: 'none', boxShadow: '0 4px 6px -1px rgb(0 0 0 / 0.1)' }} />
-                                    <Legend iconType="circle" wrapperStyle={{ paddingTop: '20px' }} />
-                                    <Bar dataKey="Physics" fill="#4f46e5" radius={[4, 4, 0, 0]} />
-                                    <Bar dataKey="Chemistry" fill="#06b6d4" radius={[4, 4, 0, 0]} />
-                                    <Bar dataKey="Math" fill="#8b5cf6" radius={[4, 4, 0, 0]} />
-                                </BarChart>
-                            </ResponsiveContainer>
+                <div className="space-y-8">
+                    {isAdmin && (
+                        <div className="bg-white rounded-2xl border border-slate-200 p-4 flex flex-col md:flex-row md:items-center md:justify-between gap-3">
+                            <label className="text-sm font-semibold text-slate-700" htmlFor="teacher-analytics-select">Select teacher to view analytics</label>
+                            <select
+                                id="teacher-analytics-select"
+                                className="px-3 py-2 rounded-xl border border-slate-300 min-w-[260px]"
+                                value={selectedTeacherId}
+                                onChange={(e) => setSelectedTeacherId(e.target.value)}
+                            >
+                                {teachers.map((teacher) => (
+                                    <option key={teacher.id || teacher._id} value={teacher.id || teacher._id}>
+                                        {teacher.fullName || teacher.email || teacher.id}
+                                    </option>
+                                ))}
+                            </select>
+                        </div>
+                    )}
+
+                    <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
+                        <div className="bg-white rounded-2xl border border-slate-200 p-5">
+                            <p className="text-xs uppercase tracking-wider text-slate-500">Overall Class Average Marks</p>
+                            <p className="text-3xl font-bold text-slate-900 mt-2">{summary.overallClassAverageMarks.toFixed(2)}</p>
+                        </div>
+                        <div className="bg-white rounded-2xl border border-slate-200 p-5">
+                            <p className="text-xs uppercase tracking-wider text-slate-500">Overall Average Percentage</p>
+                            <p className="text-3xl font-bold text-slate-900 mt-2">{summary.overallClassAveragePercentage.toFixed(2)}%</p>
+                        </div>
+                        <div className="bg-white rounded-2xl border border-slate-200 p-5">
+                            <p className="text-xs uppercase tracking-wider text-slate-500">Pass Student Percentage</p>
+                            <p className="text-3xl font-bold text-emerald-700 mt-2">{summary.passStudentPercentage.toFixed(2)}%</p>
+                            <p className="text-xs text-slate-500 mt-1">Pass mark: {summary.passMarkPercentage}%</p>
+                        </div>
+                        <div className="bg-white rounded-2xl border border-slate-200 p-5">
+                            <p className="text-xs uppercase tracking-wider text-slate-500">Coverage</p>
+                            <p className="text-sm font-semibold text-slate-800 mt-2">Exams: {summary.totalExams}</p>
+                            <p className="text-sm font-semibold text-slate-800">Classes: {summary.totalClasses}</p>
+                            <p className="text-sm font-semibold text-slate-800">Submissions: {summary.totalSubmissions}</p>
                         </div>
                     </div>
 
-                    {/* Line Chart Container */}
-                    <div className="bg-white rounded-3xl p-8 shadow-sm border border-slate-100">
-                        <h2 className="text-xl font-bold text-slate-800 mb-6">Subject Growth Trend</h2>
-                        <div className="h-80 w-full">
-                            <ResponsiveContainer width="100%" height="100%">
-                                <LineChart data={performanceData} margin={{ top: 20, right: 30, left: 0, bottom: 5 }}>
-                                    <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#E2E8F0" />
-                                    <XAxis dataKey="name" axisLine={false} tickLine={false} tick={{ fill: '#64748b' }} />
-                                    <YAxis axisLine={false} tickLine={false} tick={{ fill: '#64748b' }} />
-                                    <Tooltip contentStyle={{ borderRadius: '12px', border: 'none', boxShadow: '0 4px 6px -1px rgb(0 0 0 / 0.1)' }} />
-                                    <Legend iconType="circle" wrapperStyle={{ paddingTop: '20px' }} />
-                                    <Line type="monotone" dataKey="Physics" stroke="#4f46e5" strokeWidth={3} dot={{ strokeWidth: 2, r: 4 }} activeDot={{ r: 6 }} />
-                                    <Line type="monotone" dataKey="Chemistry" stroke="#06b6d4" strokeWidth={3} dot={{ strokeWidth: 2, r: 4 }} activeDot={{ r: 6 }} />
-                                    <Line type="monotone" dataKey="Math" stroke="#8b5cf6" strokeWidth={3} dot={{ strokeWidth: 2, r: 4 }} activeDot={{ r: 6 }} />
-                                </LineChart>
-                            </ResponsiveContainer>
+                    {performancePayload.teacherName && (
+                        <p className="text-sm text-slate-600">Showing analytics for <span className="font-semibold">{performancePayload.teacherName}</span>.</p>
+                    )}
+
+                    {loadingPerformance && <p className="text-sm text-slate-500">Loading performance analytics...</p>}
+                    {performanceError && <p className="text-sm text-rose-600">{performanceError}</p>}
+
+                    <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
+                        <div className="bg-white rounded-3xl p-8 shadow-sm border border-slate-100">
+                            <h2 className="text-xl font-bold text-slate-800 mb-6">Average Class Performance for Each Exam</h2>
+                            <div className="h-80 w-full">
+                                <ResponsiveContainer width="100%" height="100%">
+                                    <BarChart data={examAverages} margin={{ top: 20, right: 30, left: 0, bottom: 5 }}>
+                                        <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#E2E8F0" />
+                                        <XAxis dataKey="label" axisLine={false} tickLine={false} tick={{ fill: '#64748b' }} />
+                                        <YAxis axisLine={false} tickLine={false} tick={{ fill: '#64748b' }} domain={[0, 100]} />
+                                        <Tooltip cursor={{ fill: '#f8fafc' }} contentStyle={{ borderRadius: '12px', border: 'none', boxShadow: '0 4px 6px -1px rgb(0 0 0 / 0.1)' }} />
+                                        <Legend iconType="circle" wrapperStyle={{ paddingTop: '20px' }} />
+                                        <Bar dataKey="averagePercentage" name="Average %" fill="#0f766e" radius={[4, 4, 0, 0]} />
+                                        <Bar dataKey="passStudentPercentage" name="Pass %" fill="#f59e0b" radius={[4, 4, 0, 0]} />
+                                    </BarChart>
+                                </ResponsiveContainer>
+                            </div>
+                        </div>
+
+                        <div className="bg-white rounded-3xl p-8 shadow-sm border border-slate-100">
+                            <h2 className="text-xl font-bold text-slate-800 mb-6">Class Performance Comparison</h2>
+                            <div className="h-80 w-full">
+                                <ResponsiveContainer width="100%" height="100%">
+                                    <LineChart data={classComparisonChart} margin={{ top: 20, right: 30, left: 0, bottom: 5 }}>
+                                        <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#E2E8F0" />
+                                        <XAxis dataKey="className" axisLine={false} tickLine={false} tick={{ fill: '#64748b' }} />
+                                        <YAxis axisLine={false} tickLine={false} tick={{ fill: '#64748b' }} domain={[0, 100]} />
+                                        <Tooltip contentStyle={{ borderRadius: '12px', border: 'none', boxShadow: '0 4px 6px -1px rgb(0 0 0 / 0.1)' }} />
+                                        <Legend iconType="circle" wrapperStyle={{ paddingTop: '20px' }} />
+                                        <Line type="monotone" dataKey="averagePercentage" name="Average %" stroke="#0ea5e9" strokeWidth={3} dot={{ strokeWidth: 2, r: 4 }} activeDot={{ r: 6 }} />
+                                        <Line type="monotone" dataKey="passStudentPercentage" name="Pass %" stroke="#16a34a" strokeWidth={3} dot={{ strokeWidth: 2, r: 4 }} activeDot={{ r: 6 }} />
+                                    </LineChart>
+                                </ResponsiveContainer>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div className="bg-white rounded-2xl border border-slate-200 p-6">
+                        <h3 className="text-lg font-bold text-slate-800 mb-4">Exam-Level Performance</h3>
+                        <div className="overflow-x-auto">
+                            <table className="w-full text-left border-collapse">
+                                <thead>
+                                    <tr className="bg-slate-50 text-slate-600 text-sm border-b border-slate-200">
+                                        <th className="px-4 py-3 font-semibold">Exam</th>
+                                        <th className="px-4 py-3 font-semibold">Class</th>
+                                        <th className="px-4 py-3 font-semibold text-right">Avg Marks</th>
+                                        <th className="px-4 py-3 font-semibold text-right">Avg %</th>
+                                        <th className="px-4 py-3 font-semibold text-right">Pass %</th>
+                                        <th className="px-4 py-3 font-semibold text-right">Submissions</th>
+                                    </tr>
+                                </thead>
+                                <tbody className="divide-y divide-slate-100">
+                                    {examRows.map((row) => (
+                                        <tr key={row.examId} className="hover:bg-slate-50">
+                                            <td className="px-4 py-3">
+                                                <p className="font-semibold text-slate-800">{row.examTitle || '-'}</p>
+                                                <p className="text-xs text-slate-500">{row.examCode || '-'}</p>
+                                            </td>
+                                            <td className="px-4 py-3 text-slate-700">{row.className || '-'}</td>
+                                            <td className="px-4 py-3 text-right font-semibold text-slate-800">{Number(row.averageMarks || 0).toFixed(2)}</td>
+                                            <td className="px-4 py-3 text-right text-cyan-700 font-semibold">{Number(row.averagePercentage || 0).toFixed(2)}%</td>
+                                            <td className="px-4 py-3 text-right text-emerald-700 font-semibold">{Number(row.passStudentPercentage || 0).toFixed(2)}%</td>
+                                            <td className="px-4 py-3 text-right text-slate-700">{row.submissionCount || 0}</td>
+                                        </tr>
+                                    ))}
+                                    {!loadingPerformance && !performanceError && examRows.length === 0 && (
+                                        <tr>
+                                            <td className="px-4 py-5 text-sm text-slate-500" colSpan={6}>No exam performance data available yet.</td>
+                                        </tr>
+                                    )}
+                                </tbody>
+                            </table>
+                        </div>
+                    </div>
+
+                    <div className="bg-white rounded-2xl border border-slate-200 p-6">
+                        <h3 className="text-lg font-bold text-slate-800 mb-4">Class Comparison</h3>
+                        <div className="overflow-x-auto">
+                            <table className="w-full text-left border-collapse">
+                                <thead>
+                                    <tr className="bg-slate-50 text-slate-600 text-sm border-b border-slate-200">
+                                        <th className="px-4 py-3 font-semibold">Class</th>
+                                        <th className="px-4 py-3 font-semibold text-right">Exams</th>
+                                        <th className="px-4 py-3 font-semibold text-right">Submissions</th>
+                                        <th className="px-4 py-3 font-semibold text-right">Avg Marks</th>
+                                        <th className="px-4 py-3 font-semibold text-right">Avg %</th>
+                                        <th className="px-4 py-3 font-semibold text-right">Pass %</th>
+                                    </tr>
+                                </thead>
+                                <tbody className="divide-y divide-slate-100">
+                                    {classRows.map((row) => (
+                                        <tr key={row.classId} className="hover:bg-slate-50">
+                                            <td className="px-4 py-3 text-slate-800 font-semibold">{row.className || '-'}</td>
+                                            <td className="px-4 py-3 text-right text-slate-700">{row.examCount || 0}</td>
+                                            <td className="px-4 py-3 text-right text-slate-700">{row.submissionCount || 0}</td>
+                                            <td className="px-4 py-3 text-right font-semibold text-slate-800">{Number(row.averageMarks || 0).toFixed(2)}</td>
+                                            <td className="px-4 py-3 text-right text-cyan-700 font-semibold">{Number(row.averagePercentage || 0).toFixed(2)}%</td>
+                                            <td className="px-4 py-3 text-right text-emerald-700 font-semibold">{Number(row.passStudentPercentage || 0).toFixed(2)}%</td>
+                                        </tr>
+                                    ))}
+                                    {!loadingPerformance && !performanceError && classRows.length === 0 && (
+                                        <tr>
+                                            <td className="px-4 py-5 text-sm text-slate-500" colSpan={6}>No class comparison data available yet.</td>
+                                        </tr>
+                                    )}
+                                </tbody>
+                            </table>
                         </div>
                     </div>
                 </div>

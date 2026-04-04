@@ -4,6 +4,7 @@ import { useAuth } from '../services/AuthContext';
 
 export default function FeedbackPage() {
   const { user } = useAuth();
+  const role = String(user?.role || '').toUpperCase().replace(/^ROLE_/, '');
   const [feedbacks, setFeedbacks] = useState([]);
   const [searchQuery, setSearchQuery] = useState('');
   const [feedbackForm, setFeedbackForm] = useState({
@@ -23,12 +24,13 @@ export default function FeedbackPage() {
   };
 
   useEffect(() => {
-    load();
-    // Load teachers for student feedback form
-    if (user?.role === 'STUDENT') {
+    if (role === 'ADMIN' || role === 'TEACHER') {
+      load();
+    }
+    if (role === 'STUDENT') {
       api.get('/teachers').then(res => setTeachers(res.data)).catch(err => console.error(err));
     }
-  }, [user]);
+  }, [role]);
 
   const handleFeedbackChange = (e) => {
     const { name, value, type, checked } = e.target;
@@ -40,6 +42,16 @@ export default function FeedbackPage() {
 
   const handleFeedbackSubmit = async (e) => {
     e.preventDefault();
+    if (!feedbackForm.teacherId) {
+      setSubmitMessage('✗ Please select a teacher.');
+      setTimeout(() => setSubmitMessage(''), 5000);
+      return;
+    }
+    if (feedbackForm.rating < 1 || feedbackForm.rating > 5) {
+      setSubmitMessage('✗ Rating must be between 1 and 5.');
+      setTimeout(() => setSubmitMessage(''), 5000);
+      return;
+    }
     try {
       await api.post('/feedbacks', {
         ...feedbackForm,
@@ -58,14 +70,14 @@ export default function FeedbackPage() {
   };
 
   const filteredFeedbacks = feedbacks.filter(f =>
-    f.comment.toLowerCase().includes(searchQuery.toLowerCase()) ||
-    (f.student ? f.student.fullName.toLowerCase().includes(searchQuery.toLowerCase()) : 'anonymous'.includes(searchQuery.toLowerCase())) ||
-    f.teacher?.fullName.toLowerCase().includes(searchQuery.toLowerCase())
+    String(f?.comment || '').toLowerCase().includes(searchQuery.toLowerCase()) ||
+    (f.student ? String(f.student.fullName || '').toLowerCase().includes(searchQuery.toLowerCase()) : 'anonymous'.includes(searchQuery.toLowerCase())) ||
+    String(f?.teacher?.fullName || '').toLowerCase().includes(searchQuery.toLowerCase())
   );
 
   return (
     <div className="space-y-6">
-      {user?.role === 'STUDENT' && (
+      {role === 'STUDENT' && (
         <div className="bg-white/10 backdrop-blur-xl border border-white/20 rounded-3xl p-8 shadow-2xl">
           <h2 className="text-2xl font-bold text-slate-800 mb-6">Submit Your Feedback</h2>
           {submitMessage && (
@@ -147,7 +159,7 @@ export default function FeedbackPage() {
         </div>
       )}
 
-      {(user?.role === 'TEACHER' || user?.role === 'ADMIN') && (
+      {(role === 'TEACHER' || role === 'ADMIN') && (
         <>
       <div className="bg-white rounded-3xl p-8 shadow-sm border border-slate-100 flex flex-col md:flex-row items-center justify-between gap-6">
         <div>

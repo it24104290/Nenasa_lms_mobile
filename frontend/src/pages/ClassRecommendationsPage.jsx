@@ -19,6 +19,8 @@ export default function ClassRecommendationsPage() {
     const [selectedSubject, setSelectedSubject] = useState('');
     const [selectedTeacher, setSelectedTeacher] = useState('');
     const [recommendations, setRecommendations] = useState([]);
+    const [paperClasses, setPaperClasses] = useState([]);
+    const [revisionClasses, setRevisionClasses] = useState([]);
     const [loadingRecommendations, setLoadingRecommendations] = useState(false);
 
     const [leaderboardPayload, setLeaderboardPayload] = useState({ subjects: [], date: '', lastUpdatedAt: '' });
@@ -156,9 +158,15 @@ export default function ClassRecommendationsPage() {
 
         try {
             const response = await api.get(`/recommendations?subjectId=${selectedSubject}&teacherId=${selectedTeacher}`);
-            setRecommendations(response.data);
+            const payload = response.data || {};
+            setPaperClasses(Array.isArray(payload.paperClasses) ? payload.paperClasses : []);
+            setRevisionClasses(Array.isArray(payload.revisionClasses) ? payload.revisionClasses : []);
+            setRecommendations(Array.isArray(payload.combinedClasses) ? payload.combinedClasses : []);
         } catch (err) {
             console.error(err);
+            setPaperClasses([]);
+            setRevisionClasses([]);
+            setRecommendations([]);
         } finally {
             setLoadingRecommendations(false);
         }
@@ -333,23 +341,43 @@ export default function ClassRecommendationsPage() {
                     <div className="bg-slate-100 rounded-3xl p-8 h-full border border-slate-200">
                         <h2 className="text-xl font-bold text-slate-800 mb-6">Suggested Sessions</h2>
                         {recommendations.length > 0 ? (
-                            <div className="space-y-4">
-                                {recommendations.map((cls) => (
-                                    <div key={cls.id} className="bg-white p-5 rounded-2xl shadow-sm border border-slate-200">
-                                        <div className="flex justify-between mb-2">
-                                            <span className={`text-xs font-semibold px-2 py-1 rounded ${cls.type === 'PAPER' ? 'bg-orange-100 text-orange-700' : 'bg-blue-100 text-blue-700'}`}>
-                                                {cls.type}
-                                            </span>
-                                            <span className="text-xs text-slate-500">{cls.subjectId}</span>
-                                        </div>
-                                        <h3 className="text-lg font-semibold text-slate-800">{cls.name}</h3>
-                                        <p className="text-sm text-slate-500 mt-1">Teacher: {cls.teacher?.fullName || 'Unknown'}</p>
-                                        <p className="text-sm text-slate-500 mt-1">{cls.dayOfWeek} {cls.startTime} - {cls.endTime}</p>
+                            <div className="space-y-6">
+                                <div>
+                                    <h3 className="text-sm font-bold uppercase tracking-wide text-orange-700 mb-3">Paper Classes</h3>
+                                    <div className="space-y-4">
+                                        {paperClasses.length > 0 ? paperClasses.map((cls) => (
+                                            <div key={cls.id} className="bg-white p-5 rounded-2xl shadow-sm border border-slate-200">
+                                                <div className="flex justify-between mb-2">
+                                                    <span className="text-xs font-semibold px-2 py-1 rounded bg-orange-100 text-orange-700">PAPER</span>
+                                                    <span className="text-xs text-slate-500">{cls.subjectId}</span>
+                                                </div>
+                                                <h3 className="text-lg font-semibold text-slate-800">{cls.name}</h3>
+                                                <p className="text-sm text-slate-500 mt-1">Teacher: {cls.teacher?.fullName || 'Unknown'}</p>
+                                                <p className="text-sm text-slate-500 mt-1">{cls.dayOfWeek} {cls.startTime} - {cls.endTime}</p>
+                                            </div>
+                                        )) : <p className="text-sm text-slate-500">No paper class found for this subject and teacher.</p>}
                                     </div>
-                                ))}
+                                </div>
+
+                                <div>
+                                    <h3 className="text-sm font-bold uppercase tracking-wide text-blue-700 mb-3">Revision Classes</h3>
+                                    <div className="space-y-4">
+                                        {revisionClasses.length > 0 ? revisionClasses.map((cls) => (
+                                            <div key={cls.id} className="bg-white p-5 rounded-2xl shadow-sm border border-slate-200">
+                                                <div className="flex justify-between mb-2">
+                                                    <span className="text-xs font-semibold px-2 py-1 rounded bg-blue-100 text-blue-700">REVISION</span>
+                                                    <span className="text-xs text-slate-500">{cls.subjectId}</span>
+                                                </div>
+                                                <h3 className="text-lg font-semibold text-slate-800">{cls.name}</h3>
+                                                <p className="text-sm text-slate-500 mt-1">Teacher: {cls.teacher?.fullName || 'Unknown'}</p>
+                                                <p className="text-sm text-slate-500 mt-1">{cls.dayOfWeek} {cls.startTime} - {cls.endTime}</p>
+                                            </div>
+                                        )) : <p className="text-sm text-slate-500">No revision class found for this subject and teacher.</p>}
+                                    </div>
+                                </div>
                             </div>
                         ) : (
-                            <p className="text-slate-500">Select subject and teacher to receive Paper/Revision class suggestions.</p>
+                            <p className="text-slate-500">Select subject and teacher to receive paper and revision class suggestions together.</p>
                         )}
                     </div>
                 </div>

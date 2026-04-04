@@ -16,7 +16,8 @@ try {
     const propsPath = path.join(baseDir, 'src', 'main', 'resources', 'application.properties');
     const props = `spring.application.name=Nanasa LMS
 server.port=8080
-spring.data.mongodb.uri=mongodb+srv://ps:<db_password>@cluster0.si0a6ee.mongodb.net/nanasa?appName=Cluster0
+spring.data.mongodb.uri=mongodb+srv://chamikarapasindu367_db_user:HsQ63tIbwMpdzIFR@cluster0.pxsvw25.mongodb.net/?appName=Cluster0
+spring.data.mongodb.database=nanasa
 nanasa.jwt.secret=9a4f2c8d3b7a1e6f45c8a0b3f267d8b1d4e6f3c8a9d2b5f8e3a9c8b5f6v8a3d9
 nanasa.jwt.expiration-ms=86400000
 nanasa.cors.allowed-origins=http://localhost:3000,http://localhost:5173,http://localhost:8080

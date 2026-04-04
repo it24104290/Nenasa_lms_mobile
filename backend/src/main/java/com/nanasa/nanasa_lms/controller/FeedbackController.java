@@ -4,6 +4,7 @@ import com.nanasa.nanasa_lms.model.Feedback;
 import com.nanasa.nanasa_lms.service.FeedbackService;
 import com.nanasa.nanasa_lms.dto.FeedbackCreateRequest;
 import com.nanasa.nanasa_lms.security.CustomUserDetails;
+import jakarta.validation.Valid;
 import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.security.core.Authentication;
 import org.springframework.web.bind.annotation.*;
@@ -35,10 +36,10 @@ public class FeedbackController {
 
     @PostMapping
     @PreAuthorize("hasRole('STUDENT')")
-    public Feedback create(@RequestBody FeedbackCreateRequest request, Authentication authentication) {
-        CustomUserDetails userDetails = (CustomUserDetails) authentication.getPrincipal();
+    public Feedback create(@Valid @RequestBody FeedbackCreateRequest request, Authentication authentication) {
+        Object principal = authentication.getPrincipal();
         String studentId = null;
-        if (userDetails.getUser().getStudentProfile() != null) {
+        if (principal instanceof CustomUserDetails userDetails && userDetails.getUser().getStudentProfile() != null) {
             studentId = userDetails.getUser().getStudentProfile().getId();
         }
         return feedbackService.create(request, studentId);
