@@ -235,6 +235,74 @@ app.post('/api/admin/fix-seed-accounts', requireAuth, requireRole('ADMIN'), (req
   }
 });
 
+// Admin-only endpoint to create/restore a user account with a specific password
+app.post('/api/admin/create-user', requireAuth, requireRole('ADMIN'), (req, res) => {
+  try {
+    const { username, email, password, role } = req.body || {};
+    if (!username || !email || !password) {
+      return res.status(400).json({ message: 'Username, email, and password required' });
+    }
+
+    const db = readDb();
+    const timestamp = nowIso();
+
+    // Check if user already exists
+    const exists = db.users.some(u => String(u.username).toLowerCase() === String(username).toLowerCase());
+    if (exists) {
+      return res.status(409).json({ message: 'User already exists' });
+    }
+
+    const userId = id('usr');
+    const normalizedRole = normalizeRole(role || 'TEACHER');
+    const newUser = {
+      id: userId,
+      username: String(username).trim(),
+      email: String(email).trim(),
+      passwordHash: bcrypt.hashSync(String(password), 10),
+      role: normalizedRole,
+      teacherId: normalizedRole === 'TEACHER' ? id('tch') : null,
+      studentId: normalizedRole === 'STUDENT' ? id('std') : null,
+      profile: null,
+      createdAt: timestamp,
+    };
+
+    db.users.push(newUser);
+
+    if (normalizedRole === 'TEACHER') {
+      db.teachers.push({
+        id: newUser.teacherId,
+        userId,
+        fullName: String(username).trim(),
+        email: String(email).trim(),
+        subject: '',
+        contactNumber: '',
+        experience: null,
+        createdAt: timestamp,
+      });
+    }
+
+    if (normalizedRole === 'STUDENT') {
+      db.students.push({
+        id: newUser.studentId,
+        userId,
+        fullName: String(username).trim(),
+        email: String(email).trim(),
+        contactNumber: '',
+        dateOfBirth: null,
+        admissionNumber: `ADM-${Date.now()}`,
+        status: 'ACTIVE',
+        createdAt: timestamp,
+      });
+    }
+
+    updateDb(d => Object.assign(d, db));
+    res.status(201).json({ message: 'User created successfully', user: newUser });
+  } catch (error) {
+    console.error('Error creating user:', error);
+    res.status(500).json({ message: 'Error creating user' });
+  }
+});
+
 app.post('/api/auth/register', (req, res) => {
   const { username, email, password, role } = req.body || {};
   if (!username || !email || !password) {
