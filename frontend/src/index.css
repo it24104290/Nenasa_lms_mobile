@@ -5,3 +5,59 @@
     @apply bg-slate-50 text-slate-900 antialiased font-sans;
   }
 }
+
+@layer utilities {
+  /* Animation delay utilities */
+  .animation-delay-2000 {
+    animation-delay: 2s;
+  }
+
+  .animation-delay-4000 {
+    animation-delay: 4s;
+  }
+
+  /* Smooth scrolling */
+  html {
+    scroll-behavior: smooth;
+  }
+
+  /* Custom focus styles for better accessibility */
+  input:focus,
+  select:focus,
+  textarea:focus,
+  button:focus {
+    @apply outline-none;
+  }
+
+  /* Better button styling */
+  button {
+    @apply transition-all duration-300;
+  }
+
+  /* Enhance shadows with glow effect */
+  .shadow-glow {
+    box-shadow: 0 0 30px rgba(99, 102, 241, 0.3);
+  }
+
+  .shadow-glow-pink {
+    box-shadow: 0 0 30px rgba(236, 72, 153, 0.3);
+  }
+
+  /* Gradient text support */
+  .gradient-text {
+    @apply text-transparent bg-clip-text;
+  }
+
+  /* Backdrop blur enhancements */
+  .backdrop-blur-xl {
+    backdrop-filter: blur(20px);
+  }
+
+  /* Custom animations for form elements */
+  input[type="text"]:focus,
+  input[type="email"]:focus,
+  input[type="password"]:focus,
+  select:focus {
+    @apply ring-2 ring-purple-500 ring-offset-2 ring-offset-slate-900;
+  }
+}

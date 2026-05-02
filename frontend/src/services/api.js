@@ -2,8 +2,9 @@ import axios from 'axios';
 
 const backendOrigin = import.meta.env.VITE_BACKEND_ORIGIN || 'http://localhost:8080';
 
-// Prefer explicit backend API URL unless a custom base URL is provided via env.
-const apiBaseURL = import.meta.env.VITE_API_BASE_URL || `${backendOrigin}/api`;
+// In local development, default to Vite proxy (/api -> backend:8080).
+// This keeps frontend and backend connected with one origin from the browser's perspective.
+const apiBaseURL = import.meta.env.VITE_API_BASE_URL || '/api';
 
 const api = axios.create({
   baseURL: apiBaseURL

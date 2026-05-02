@@ -1,0 +1,123 @@
+{
+  "meta": {
+    "createdAt": "2026-05-01T15:59:04.839Z",
+    "updatedAt": "2026-05-01T15:59:04.839Z"
+  },
+  "users": [
+    {
+      "id": "usr_4af586b9ab17",
+      "username": "admin",
+      "email": "admin@nanasa.local",
+      "passwordHash": "$2a$10$Hu1a.5odPbQlajGDrWENzOPZxBcJHNJmNKfsCHfwh.wl1AdwuX3jO",
+      "role": "ADMIN",
+      "teacherId": null,
+      "studentId": null,
+      "profile": null,
+      "createdAt": "2026-05-01T15:59:04.839Z"
+    },
+    {
+      "id": "usr_7c08ec411625",
+      "username": "teacher",
+      "email": "teacher@nanasa.local",
+      "passwordHash": "$2a$10$8T4CMe533Meb25bIZXgZC.gUZlBaYOC0xiPKt5vWSxLenJipZWjnu",
+      "role": "TEACHER",
+      "teacherId": "tch_ab14a9b05183",
+      "studentId": null,
+      "profile": null,
+      "createdAt": "2026-05-01T15:59:04.839Z"
+    },
+    {
+      "id": "usr_ac8d325b985b",
+      "username": "student",
+      "email": "student@nanasa.local",
+      "passwordHash": "$2a$10$MVEA/WfjXty5e.x3bE1jOeMaAhL52HZ59kYa6z2.X0.ONjUaiy9yq",
+      "role": "STUDENT",
+      "teacherId": null,
+      "studentId": "std_1cc4294eebde",
+      "profile": {
+        "fullName": "Demo Student",
+        "age": 17,
+        "grade": "A/L",
+        "stream": "MATHS",
+        "updatedAt": "2026-05-01T15:59:04.839Z"
+      },
+      "createdAt": "2026-05-01T15:59:04.839Z"
+    },
+    {
+      "id": "usr_6e01ee7fdab1",
+      "username": "officer",
+      "email": "officer@nanasa.local",
+      "passwordHash": "$2a$10$6NNikCWHrioPPbxo72HKMemINeK0iPVYb7UjjO1jloSdCleIZ.KFG",
+      "role": "PAYMENT_OFFICER",
+      "teacherId": null,
+      "studentId": null,
+      "profile": null,
+      "createdAt": "2026-05-01T15:59:04.839Z"
+    }
+  ],
+  "teachers": [
+    {
+      "id": "tch_ab14a9b05183",
+      "userId": "usr_7c08ec411625",
+      "fullName": "Demo Teacher",
+      "email": "teacher@nanasa.local",
+      "subject": "Combined Maths",
+      "contactNumber": "0770000000",
+      "experience": 5,
+      "createdAt": "2026-05-01T15:59:04.839Z"
+    }
+  ],
+  "students": [
+    {
+      "id": "std_1cc4294eebde",
+      "userId": "usr_ac8d325b985b",
+      "fullName": "Demo Student",
+      "email": "student@nanasa.local",
+      "contactNumber": "",
+      "dateOfBirth": "2008-01-01",
+      "admissionNumber": "ADM-1001",
+      "status": "ACTIVE",
+      "createdAt": "2026-05-01T15:59:04.839Z"
+    }
+  ],
+  "modules": [
+    {
+      "id": "mod_69953a53eb1a",
+      "name": "Combined Maths Foundations",
+      "description": "Core mathematics module",
+      "subject": "maths",
+      "grade": "A/L",
+      "teacherId": "tch_ab14a9b05183",
+      "createdAt": "2026-05-01T15:59:04.839Z"
+    }
+  ],
+  "classes": [
+    {
+      "id": "cls_87d5d25b7f8c",
+      "name": "A/L Theory Batch",
+      "grade": "A/L",
+      "subjectId": "maths",
+      "type": "THEORY",
+      "dayOfWeek": "SATURDAY",
+      "startTime": "08:00",
+      "endTime": "10:00",
+      "teacherId": "tch_ab14a9b05183",
+      "createdAt": "2026-05-01T15:59:04.839Z"
+    }
+  ],
+  "studentClassEnrollments": [
+    {
+      "id": "enr_2307185c0c7e",
+      "studentId": "std_1cc4294eebde",
+      "classId": "cls_87d5d25b7f8c",
+      "createdAt": "2026-05-01T15:59:04.839Z"
+    }
+  ],
+  "lessons": [],
+  "feedbacks": [],
+  "payments": [],
+  "moduleApplications": [],
+  "exams": [],
+  "examEnrollments": [],
+  "examSubmissions": []
+}

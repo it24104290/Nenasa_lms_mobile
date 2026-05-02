@@ -11,6 +11,7 @@ export default function TeachersPage() {
     experience: ''
   });
   const [editingId, setEditingId] = useState(null);
+  const [status, setStatus] = useState('');
 
   const load = () => {
     api.get('/teachers')
@@ -28,16 +29,31 @@ export default function TeachersPage() {
 
   const handleSubmit = async (e) => {
     e.preventDefault();
+    setStatus('');
+    const experienceValue = form.experience === '' ? null : Number(form.experience);
+    if (experienceValue !== null && Number.isNaN(experienceValue)) {
+      setStatus('Experience must be a number.');
+      return;
+    }
+
+    const payload = {
+      ...form,
+      experience: experienceValue,
+    };
+
     try {
       if (editingId) {
-        await api.put(`/teachers/${editingId}`, form);
+        await api.put(`/teachers/${editingId}`, payload);
       } else {
-        await api.post('/teachers', form);
+        await api.post('/teachers', payload);
       }
       setForm({ fullName: '', email: '', subject: '', contactNumber: '', experience: '' });
       setEditingId(null);
+      setStatus(editingId ? 'Teacher updated successfully.' : 'Teacher added successfully.');
       load();
     } catch (err) {
+      const message = err?.response?.data?.message || err?.response?.data || 'Failed to save teacher.';
+      setStatus(String(message));
       console.error(err);
     }
   };
@@ -77,6 +93,11 @@ export default function TeachersPage() {
           </h2>
 
           <form onSubmit={handleSubmit} className="space-y-4">
+            {status && (
+              <div className="p-3 rounded-xl text-sm bg-slate-50 border border-slate-200 text-slate-700">
+                {status}
+              </div>
+            )}
             <div>
               <label className="block text-sm font-semibold text-slate-700 mb-1">Full Name</label>
               <input

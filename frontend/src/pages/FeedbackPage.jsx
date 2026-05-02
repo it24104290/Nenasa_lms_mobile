@@ -16,11 +16,35 @@ export default function FeedbackPage() {
   const [teachers, setTeachers] = useState([]);
   const [submitMessage, setSubmitMessage] = useState('');
   const [hoverRating, setHoverRating] = useState(0);
+  const [loadMessage, setLoadMessage] = useState('');
 
   const load = () => {
+    setLoadMessage('');
+
+    if (role === 'TEACHER' && user?.teacherId) {
+      api.get(`/feedbacks/teacher/${user.teacherId}`)
+        .then((res) => {
+          const data = res.data || [];
+          setFeedbacks(Array.isArray(data) ? data : []);
+        })
+        .catch((err) => {
+          console.error(err);
+          setLoadMessage('Unable to load your feedback right now.');
+          setFeedbacks([]);
+        });
+      return;
+    }
+
     api.get('/feedbacks')
-      .then((res) => setFeedbacks(res.data))
-      .catch(err => console.error(err));
+      .then((res) => {
+        const data = res.data || [];
+        setFeedbacks(Array.isArray(data) ? data : []);
+      })
+      .catch((err) => {
+        console.error(err);
+        setLoadMessage('Unable to load feedback right now.');
+        setFeedbacks([]);
+      });
   };
 
   useEffect(() => {
@@ -30,7 +54,7 @@ export default function FeedbackPage() {
     if (role === 'STUDENT') {
       api.get('/teachers').then(res => setTeachers(res.data)).catch(err => console.error(err));
     }
-  }, [role]);
+  }, [role, user?.teacherId]);
 
   const handleFeedbackChange = (e) => {
     const { name, value, type, checked } = e.target;
@@ -42,8 +66,8 @@ export default function FeedbackPage() {
 
   const handleFeedbackSubmit = async (e) => {
     e.preventDefault();
-    if (!feedbackForm.teacherId) {
-      setSubmitMessage('✗ Please select a teacher.');
+    if (!String(feedbackForm.teacherId || '').trim()) {
+      setSubmitMessage('✗ Select a teacher.');
       setTimeout(() => setSubmitMessage(''), 5000);
       return;
     }
@@ -93,7 +117,6 @@ export default function FeedbackPage() {
                 value={feedbackForm.teacherId}
                 onChange={handleFeedbackChange}
                 className="w-full px-4 py-3 rounded-2xl border border-slate-200 focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-500 bg-slate-50 transition-all font-medium text-slate-700"
-                required
               >
                 <option value="">Select Teacher</option>
                 {teachers.map(teacher => (
@@ -184,6 +207,11 @@ export default function FeedbackPage() {
       </div>
 
       <div className="bg-white rounded-3xl shadow-sm border border-slate-100 overflow-hidden">
+        {loadMessage && (
+          <div className="p-4 border-b border-slate-200 bg-amber-50 text-amber-800 text-sm font-medium">
+            {loadMessage}
+          </div>
+        )}
         <div className="overflow-x-auto">
           <table className="w-full text-left border-collapse">
             <thead>
