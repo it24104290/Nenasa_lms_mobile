@@ -1,10 +1,10 @@
 import axios from 'axios';
 
-const backendOrigin = import.meta.env.VITE_BACKEND_ORIGIN || 'http://localhost:8080';
+const backendOrigin = import.meta.env.VITE_BACKEND_ORIGIN || (import.meta.env.DEV ? 'http://localhost:8080' : 'https://nenasa-lms-mobile.onrender.com');
 
-// In local development, default to Vite proxy (/api -> backend:8080).
-// This keeps frontend and backend connected with one origin from the browser's perspective.
-const apiBaseURL = import.meta.env.VITE_API_BASE_URL || '/api';
+// In production, use the full backend URL.
+// In local development, use the Vite proxy (/api -> backend:8080).
+const apiBaseURL = import.meta.env.VITE_API_BASE_URL || (import.meta.env.DEV ? '/api' : `${backendOrigin}/api`);
 
 const api = axios.create({
   baseURL: apiBaseURL
