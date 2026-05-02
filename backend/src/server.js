@@ -157,6 +157,84 @@ app.get('/api/health', (_req, res) => {
   res.json({ ok: true, service: 'nanasa-lms-backend' });
 });
 
+// Admin-only endpoint to repair/reinitialize missing seed accounts
+app.post('/api/admin/fix-seed-accounts', requireAuth, requireRole('ADMIN'), (req, res) => {
+  try {
+    const db = readDb();
+    const timestamp = nowIso();
+    let fixed = [];
+
+    const seedAccounts = [
+      { username: 'teacher', email: 'teacher@nanasa.local', password: 'teacher123', role: 'TEACHER' },
+      { username: 'student', email: 'student@nanasa.local', password: 'student123', role: 'STUDENT' },
+      { username: 'officer', email: 'officer@nanasa.local', password: 'officer123', role: 'PAYMENT_OFFICER' },
+    ];
+
+    seedAccounts.forEach((seed) => {
+      const exists = db.users.some(u => u.username === seed.username);
+      if (!exists) {
+        const userId = id('usr');
+        const newUser = {
+          id: userId,
+          username: seed.username,
+          email: seed.email,
+          passwordHash: bcrypt.hashSync(seed.password, 10),
+          role: seed.role,
+          teacherId: seed.role === 'TEACHER' ? id('tch') : null,
+          studentId: seed.role === 'STUDENT' ? id('std') : null,
+          profile: seed.role === 'STUDENT' ? {
+            fullName: 'Demo Student',
+            age: 17,
+            grade: 'A/L',
+            stream: 'MATHS',
+            updatedAt: timestamp,
+          } : null,
+          createdAt: timestamp,
+        };
+        db.users.push(newUser);
+        fixed.push(seed.username);
+
+        if (seed.role === 'TEACHER') {
+          db.teachers.push({
+            id: newUser.teacherId,
+            userId,
+            fullName: 'Demo Teacher',
+            email: seed.email,
+            subject: 'Combined Maths',
+            contactNumber: '0770000000',
+            experience: 5,
+            createdAt: timestamp,
+          });
+        }
+
+        if (seed.role === 'STUDENT') {
+          db.students.push({
+            id: newUser.studentId,
+            userId,
+            fullName: 'Demo Student',
+            email: seed.email,
+            contactNumber: '',
+            dateOfBirth: '2008-01-01',
+            grade: 'A/L',
+            stream: 'MATHS',
+            createdAt: timestamp,
+          });
+        }
+      }
+    });
+
+    if (fixed.length > 0) {
+      updateDb(d => Object.assign(d, db));
+      res.json({ message: 'Seed accounts fixed', fixed });
+    } else {
+      res.json({ message: 'All seed accounts already exist', fixed: [] });
+    }
+  } catch (error) {
+    console.error('Error fixing seed accounts:', error);
+    res.status(500).json({ message: 'Error fixing seed accounts' });
+  }
+});
+
 app.post('/api/auth/register', (req, res) => {
   const { username, email, password, role } = req.body || {};
   if (!username || !email || !password) {
