@@ -147,8 +147,10 @@ export default function NavBar() {
         </div>
 
         {/* Mobile menu */}
-        {mobileMenuOpen && user && (
-          <div className="md:hidden pb-4 bg-gradient-to-b from-blue-700/50 to-indigo-800/50">
+        {user && (
+          <div className={`md:hidden overflow-hidden transition-all duration-300 ease-in-out origin-top bg-gradient-to-b from-blue-700/50 to-indigo-800/50 ${
+            mobileMenuOpen ? 'max-h-screen pb-4 opacity-100' : 'max-h-0 opacity-0 pointer-events-none'
+          }`}>
             <div className="space-y-1 px-2 pt-2">
               {role === 'ADMIN' ? (
                 <>
