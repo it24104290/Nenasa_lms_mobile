@@ -2,6 +2,7 @@ import React from 'react';
 import { Routes, Route, Navigate } from 'react-router-dom';
 import { useAuth } from './services/AuthContext';
 import NavBar from './components/Layout/NavBar';
+import BottomNavBar from './components/Layout/BottomNavBar';
 import LoginPage from './pages/LoginPage';
 import RegisterPage from './pages/RegisterPage';
 import ProfileFormPage from './pages/ProfileFormPage';
@@ -52,7 +53,7 @@ export default function App() {
       }}
     >
       <NavBar />
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8 pb-24 md:pb-8">
         <Routes>
           <Route path="/login" element={<LoginPage />} />
           <Route path="/register" element={<RegisterPage />} />
@@ -189,6 +190,7 @@ export default function App() {
           />
         </Routes>
       </div>
+      <BottomNavBar />
     </div>
   );
 }
