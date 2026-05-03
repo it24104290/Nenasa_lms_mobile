@@ -1,0 +1,371 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Nenasa LMS - Database Schema</title>
+    <script src="https://cdn.jsdelivr.net/npm/mermaid/dist/mermaid.min.js"></script>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            padding: 20px;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+        }
+
+        .container {
+            background: white;
+            border-radius: 12px;
+            box-shadow: 0 20px 60px rgba(0, 0, 0, 0.3);
+            padding: 40px;
+            max-width: 1400px;
+            width: 100%;
+        }
+
+        .header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 30px;
+            border-bottom: 3px solid #667eea;
+            padding-bottom: 20px;
+        }
+
+        .header h1 {
+            font-size: 28px;
+            color: #333;
+            font-weight: 600;
+        }
+
+        .print-btn {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            border: none;
+            padding: 12px 24px;
+            border-radius: 8px;
+            font-size: 16px;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            transition: transform 0.2s, box-shadow 0.2s;
+            font-weight: 600;
+        }
+
+        .print-btn:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 10px 20px rgba(102, 126, 234, 0.4);
+        }
+
+        .print-btn:active {
+            transform: translateY(0);
+        }
+
+        .diagram-container {
+            background: #f8f9fa;
+            border-radius: 8px;
+            padding: 30px;
+            overflow-x: auto;
+            border: 2px solid #e9ecef;
+        }
+
+        .mermaid {
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            min-height: 600px;
+        }
+
+        @media print {
+            body {
+                background: white;
+                padding: 0;
+            }
+
+            .container {
+                box-shadow: none;
+                max-width: 100%;
+                padding: 20px;
+            }
+
+            .header {
+                display: none;
+            }
+
+            .print-btn {
+                display: none;
+            }
+
+            .diagram-container {
+                background: white;
+                border: none;
+                padding: 20px;
+                page-break-inside: avoid;
+            }
+
+            .mermaid {
+                min-height: auto;
+            }
+        }
+
+        @media (max-width: 768px) {
+            .container {
+                padding: 20px;
+            }
+
+            .header h1 {
+                font-size: 22px;
+            }
+
+            .print-btn {
+                padding: 10px 16px;
+                font-size: 14px;
+            }
+
+            .diagram-container {
+                padding: 15px;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            <h1>📊 Database Schema</h1>
+            <button class="print-btn" onclick="window.print()">📥 Print to PDF</button>
+        </div>
+
+        <div class="diagram-container">
+            <div class="mermaid">
+erDiagram
+    USERS ||--o{ TEACHERS : "one-to-one"
+    USERS ||--o{ STUDENTS : "one-to-one"
+    USERS ||--o{ PAYMENT_OFFICERS : "one-to-one"
+    TEACHERS ||--o{ CLASSES : "creates"
+    TEACHERS ||--o{ LESSONS : "creates"
+    TEACHERS ||--o{ EXAMS : "creates"
+    STUDENTS ||--o{ EXAM_SUBMISSIONS : "submits"
+    STUDENTS ||--o{ ENROLLMENTS : "has"
+    STUDENTS ||--o{ PAYMENTS : "makes"
+    STUDENTS ||--o{ FEEDBACKS : "gives"
+    CLASSES ||--o{ ENROLLMENTS : "has"
+    CLASSES ||--o{ LESSONS : "contains"
+    CLASSES ||--o{ MODULES : "includes"
+    LESSONS ||--o{ ATTACHMENTS : "has"
+    EXAMS ||--o{ EXAM_ENROLLMENTS : "has"
+    EXAMS ||--o{ EXAM_SUBMISSIONS : "receives"
+    EXAMS ||--o{ MCQ_QUESTIONS : "contains"
+    MCQ_QUESTIONS ||--o{ MCQ_OPTIONS : "has"
+    PAYMENTS ||--o{ PAYMENT_APPROVALS : "requires"
+    PAYMENT_OFFICERS ||--o{ PAYMENT_APPROVALS : "approves"
+
+    USERS {
+        string id PK
+        string username UK
+        string email UK
+        string passwordHash
+        string role "ADMIN|TEACHER|STUDENT|PAYMENT_OFFICER"
+        string teacherId FK
+        string studentId FK
+        string paymentOfficerId FK
+        object profile
+        timestamp createdAt
+        timestamp updatedAt
+    }
+
+    TEACHERS {
+        string id PK
+        string userId FK
+        string name
+        string specialization
+        string department
+        string bio
+        number experience
+        string phone
+        timestamp hireDate
+    }
+
+    STUDENTS {
+        string id PK
+        string userId FK
+        string firstName
+        string lastName
+        string studentId
+        number enrollmentYear
+        string parentContact
+        string address
+    }
+
+    PAYMENT_OFFICERS {
+        string id PK
+        string userId FK
+        string name
+        string department
+        string phone
+    }
+
+    CLASSES {
+        string id PK
+        string name
+        string code
+        string description
+        string teacherId FK
+        string day
+        string startTime
+        string endTime
+        string room
+        number capacity
+        string status
+    }
+
+    MODULES {
+        string id PK
+        string classId FK
+        string name
+        string description
+        number credits
+        string status
+    }
+
+    LESSONS {
+        string id PK
+        string classId FK
+        string teacherId FK
+        string moduleId FK
+        string title
+        string description
+        string content
+        string videoLink
+        string pdfLink
+        string notesLink
+        timestamp createdAt
+        timestamp updatedAt
+    }
+
+    ATTACHMENTS {
+        string id PK
+        string lessonId FK
+        string filename
+        string filetype
+        string filesize
+        string url
+        timestamp uploadedAt
+    }
+
+    ENROLLMENTS {
+        string id PK
+        string studentId FK
+        string classId FK
+        string status "ACTIVE|COMPLETED|DROPPED"
+        number grade
+        timestamp enrolledAt
+    }
+
+    EXAMS {
+        string id PK
+        string classId FK
+        string teacherId FK
+        string title
+        string description
+        string examType "MCQ|ESSAY|MIXED"
+        string instructions
+        timestamp scheduledAt
+        number duration
+        number totalMarks
+        number passingMarks
+        string status
+    }
+
+    EXAM_ENROLLMENTS {
+        string id PK
+        string examId FK
+        string studentId FK
+        timestamp enrolledAt
+    }
+
+    MCQ_QUESTIONS {
+        string id PK
+        string examId FK
+        string question
+        number marks
+        string difficulty "EASY|MEDIUM|HARD"
+        number questionOrder
+    }
+
+    MCQ_OPTIONS {
+        string id PK
+        string questionId FK
+        string optionText
+        boolean isCorrect
+        string optionLabel "A|B|C|D"
+    }
+
+    EXAM_SUBMISSIONS {
+        string id PK
+        string examId FK
+        string studentId FK
+        object mcqAnswers
+        string essayFilePath
+        number marksObtained
+        string status "SUBMITTED|GRADED|PENDING"
+        string feedback
+        timestamp submittedAt
+    }
+
+    PAYMENTS {
+        string id PK
+        string studentId FK
+        number amount
+        string description
+        string status "PENDING|APPROVED|DECLINED|PAID"
+        string paymentMethod
+        timestamp dueDate
+        timestamp paidDate
+        string receipt
+    }
+
+    PAYMENT_APPROVALS {
+        string id PK
+        string paymentId FK
+        string approvedBy FK
+        string status "PENDING|APPROVED|DECLINED"
+        string reason
+        timestamp processedAt
+    }
+
+    FEEDBACKS {
+        string id PK
+        string studentId FK
+        string teacherId FK
+        number rating "1-5"
+        string comment
+        boolean isAnonymous
+        timestamp createdAt
+    }
+            </div>
+        </div>
+    </div>
+
+    <script>
+        mermaid.initialize({ 
+            startOnLoad: true, 
+            theme: 'default',
+            securityLevel: 'loose',
+            er: {
+                padding: '20px',
+                fontSize: '16px'
+            }
+        });
+        mermaid.contentLoaded();
+    </script>
+</body>
+</html>
